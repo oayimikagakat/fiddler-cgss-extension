@@ -2,13 +2,11 @@
 using System.Windows.Forms;
 using Fiddler;
 
-[assembly: RequiredVersion("5.0.0.0")]
-
 namespace CGSSExtension
 {
     public class CGSSResponse : Inspector2, IResponseInspector2
     {
-        TextBox textbox;
+        TreeView treeView;
         private byte[] _body;
 
         public CGSSResponse() { }
@@ -28,7 +26,7 @@ namespace CGSSExtension
                 if (body != null)
                 {
                     string cgssbody = Encoding.UTF8.GetString(body);
-                    textbox.Text = CGSSUtil.DecryptBody(cgssbody, CGSSRequest.udid);
+                    CGSSUtil.SetJsonTreeView(treeView, CGSSUtil.DecryptBody(cgssbody, CGSSRequest.udid));
                 }
             }
         }
@@ -40,19 +38,17 @@ namespace CGSSExtension
         public void Clear()
         {
             body = null;
-            textbox.Text = "";
+            treeView.Text = "";
         }
 
         public override void AddToTab(TabPage o)
         {
-            textbox = new TextBox
+            treeView = new TreeView
             {
-                Height = o.Height,
-                Multiline = true,
-                ScrollBars = ScrollBars.Vertical
+                Height = o.Height
             };
             o.Text = "CGSS Response";
-            o.Controls.Add(textbox);
+            o.Controls.Add(treeView);
             o.Controls[0].Dock = DockStyle.Fill;
         }
 

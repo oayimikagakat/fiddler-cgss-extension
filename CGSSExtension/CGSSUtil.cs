@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Windows.Forms;
 
 namespace CGSSExtension
 {
@@ -24,7 +25,7 @@ namespace CGSSExtension
             return new string(result);
         }
 
-        public static string DecryptBody(string body, string udid)
+        public static JObject DecryptBody(string body, string udid)
         {
             try
             {
@@ -59,11 +60,16 @@ namespace CGSSExtension
                 Dictionary<string, object> resultDict = ConvertToNormalDict(result);
                 JObject json = JObject.FromObject(resultDict);
 
-                return json.ToString();
+                return json;
             }
             catch (Exception e)
             {
-                return e.Message;
+                Dictionary<string, string> errorDict = new Dictionary<string, string>
+                {
+                    { "Error", e.Message },
+                    { "Message", "This is because it is not a valid CGSS body or decrypter is missing UDID. Run CGSS Request once if you didn't." }
+                };
+                return JObject.FromObject(errorDict);
             }
         }
 
@@ -96,6 +102,68 @@ namespace CGSSExtension
                 normalDict[kvp.Key.ToString()] = ConvertToNormalType(kvp.Value);
             }
             return normalDict;
+        }
+
+        public static void SetJsonTreeView(TreeView treeView, JObject json)
+        {
+            treeView.BeginUpdate();
+            try
+            {
+                treeView.Nodes.Clear();
+                var tNode = treeView.Nodes[treeView.Nodes.Add(new TreeNode("Body"))];
+                tNode.Tag = json.Root;
+
+                AddNode(tNode, json.Root);
+
+                treeView.ExpandAll();
+            }
+            finally
+            {
+                treeView.EndUpdate();
+                treeView.Nodes[0].EnsureVisible();
+            }
+        }
+
+        public static void AddNode(TreeNode treeNode, JToken token)
+        {
+            if (token is JObject obj)
+            {
+                foreach (var property in obj.Properties())
+                {
+                    if (property.Value is JValue)
+                    {
+                        treeNode.Nodes.Add(new TreeNode(string.Format("{0} : {1}", property.Name, property.Value)));
+                    }
+                    else
+                    {
+                        var childNode = treeNode.Nodes[treeNode.Nodes.Add(new TreeNode(property.Name))];
+                        childNode.Tag = property;
+                        AddNode(childNode, property.Value);
+                    }
+                }
+            }
+            else if (token is JArray array)
+            {
+                for (int i = 0; i < array.Count; i++)
+                {
+                    if (array[i] is JValue)
+                    {
+                        treeNode.Nodes.Add(new TreeNode(string.Format("[{0}] {1}", i, array[i])));
+                    }
+                    else
+                    {
+                        var childNode = treeNode.Nodes[treeNode.Nodes.Add(new TreeNode(string.Format("[{0}]", i)))];
+                        childNode.Tag = array[i];
+                        AddNode(childNode, array[i]);
+                    }
+                }
+            }
+            else
+            {
+                var childNode = treeNode.Nodes[treeNode.Nodes.Add(new TreeNode(token.ToString()))];
+                childNode.Tag = token;
+            }
+
         }
     }
 }

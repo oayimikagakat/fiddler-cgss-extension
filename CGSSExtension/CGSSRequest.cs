@@ -2,12 +2,13 @@
 using System.Windows.Forms;
 using Fiddler;
 
+[assembly: RequiredVersion("5.0.0.0")]
 
 namespace CGSSExtension
 {
     public class CGSSRequest : Inspector2, IRequestInspector2
     {
-        TextBox textbox;
+        TreeView treeView;
         private HTTPRequestHeaders _headers;
         private byte[] _body;
         public static string udid = "";
@@ -44,7 +45,7 @@ namespace CGSSExtension
                 if (body != null)
                 {
                     string cgssbody = Encoding.UTF8.GetString(body);
-                    textbox.Text = CGSSUtil.DecryptBody(cgssbody, udid);
+                    CGSSUtil.SetJsonTreeView(treeView, CGSSUtil.DecryptBody(cgssbody, udid));
                 }
             }
         }
@@ -56,19 +57,17 @@ namespace CGSSExtension
         public void Clear()
         {
             body = null;
-            textbox.Text = "";
+            treeView.Text = "";
         }
 
         public override void AddToTab(TabPage o)
         {
-            textbox = new TextBox
+            treeView = new TreeView
             {
-                Height = o.Height,
-                Multiline = true,
-                ScrollBars = ScrollBars.Vertical
+                Height = o.Height
             };
             o.Text = "CGSS Request";
-            o.Controls.Add(textbox);
+            o.Controls.Add(treeView);
             o.Controls[0].Dock = DockStyle.Fill;
         }
 
